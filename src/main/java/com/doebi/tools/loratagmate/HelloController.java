@@ -18,11 +18,13 @@ import javafx.stage.Stage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.FileReader;
 import java.util.Random;
-
+import java.util.stream.Collectors;
 
 
 public class HelloController {
@@ -97,12 +99,12 @@ public class HelloController {
     }
 
     private void setUpProjectNameListener() {
-        ID_label_project_name.textProperty().addListener((obs, oldVal, newVal) -> {
+        ID_label_project_name.textProperty().addListener((_, _, newVal) -> {
             setAppTitleBase(APP_TITLE_BASE+" -" + newVal);
         });
     }
     private void setUpSaveButtonListeners() {
-        ID_button_save_tag.setOnAction(event -> {
+        ID_button_save_tag.setOnAction(_ -> {
             saveTag();
         });
     }
@@ -187,7 +189,7 @@ public class HelloController {
         String fileExtension = ((dotIndex > 0) ? file.getName().substring(dotIndex + 1) : "").toLowerCase();
         System.out.println(fileExtension);
         switch (fileExtension) {
-            case "txt": break; // make method
+            case "txt": handleTxtFile(file); break; // make method
             case "taghigh": handleTagFileDrop(file,ID_flow_pane_high_tags); break;// make method
             case "taglow": handleTagFileDrop(file,ID_flow_pane_low_tags); break;// make method
             case "png","jpg" : if (fileAcceptanceMode == fileacceptancemode.FileAcceptanceMode.ALL_FILES)  handleImageFile(file);break;// make method
@@ -199,17 +201,79 @@ public class HelloController {
 
     private void handleTxtFile(File file) {
         System.out.println("Handling TXT tag file: " + file.getName());
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (!line.trim().isEmpty()) {
-                    //addHighTag(line.trim());
+
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                // 1. Deactivate all existing tags
+                deactivateAllTagsInZone(ID_flow_pane_high_tags);
+                deactivateAllTagsInZone(ID_flow_pane_low_tags);
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (!line.trim().isEmpty()) {
+                        String[] tags = line.split(",");
+                        for (String rawTag : tags) {
+                            String tag = rawTag.trim();
+                            if (tag.isEmpty()) continue;
+
+                            boolean found = reactivateIfFound(tag, ID_flow_pane_high_tags)
+                                    || reactivateIfFound(tag, ID_flow_pane_low_tags);
+
+                            if (!found) {
+                                if (!tagExistsInZone(tag, ID_flow_pane_low_tags)) {
+                                    addTag(tag, ID_flow_pane_low_tags);
+                                    System.out.println("We add it " + tag);
+                                } else {
+                                    // It exists but was deactivated — reactivate it
+                                    reactivateIfFound(tag, ID_flow_pane_low_tags);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ensureAtLeastOneTagIsPresent(ID_flow_pane_high_tags);
+                ensureAtLeastOneTagIsPresent(ID_flow_pane_low_tags);
+
+            } catch (IOException e) {
+                System.err.println("Failed to read active tag list: " + e.getMessage());
+            }
+    }
+    private boolean tagExistsInZone(String tag, FlowPane pane) {
+        for (Node node : pane.getChildren()) {
+            if (node instanceof ToggleButton) {
+                String btnText = ((ToggleButton) node).getText().trim();
+                if (btnText.equalsIgnoreCase(tag)) {
+                    return true;
                 }
             }
-        } catch (IOException e) {
-            System.err.println("Failed to read taghigh file: " + e.getMessage());
+        }
+        return false;
+    }
+
+    private void deactivateAllTagsInZone(FlowPane zone) {
+        for (Node node : zone.getChildren()) {
+            if (node instanceof ToggleButton) {
+                node.getStyleClass().remove("tag-active");
+                // Optionally update internal state too if needed
+            }
         }
     }
+
+    private boolean reactivateIfFound(String tag, FlowPane zone) {
+        for (Node node : zone.getChildren()) {
+            if (node instanceof ToggleButton) {
+                ToggleButton btn = (ToggleButton) node;
+                if (btn.getText().trim().equalsIgnoreCase(tag)) {
+                    if (!btn.getStyleClass().contains("tag-active")) {
+                        btn.getStyleClass().add("tag-active");
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 
     ArrayList<String> getTagFromUI(FlowPane flowPane){
         ArrayList<String> tags = new ArrayList<>();
@@ -268,9 +332,24 @@ public class HelloController {
 
       private void addTag(String tag,FlowPane flowPane) {
         ToggleButton tagButton = prepareToggleButton(tag,flowPane);
-        tagButton.setOnAction(e -> System.out.println("tag clicked: " + tag));
+        //tagButton.setOnAction(e -> System.out.println("tag clicked: " + tag));
+        tagButton.setOnAction(e -> actionForToggleButton(tagButton));
 
         flowPane.getChildren().add(tagButton);
+    }
+
+    private void actionForToggleButton(ToggleButton toggleButton) {
+        boolean nowSelected = toggleButton.isSelected();
+
+        System.out.println("tag clicked: " + toggleButton.getText() + " — selected: " + nowSelected);
+
+        if (nowSelected) {
+            if (!toggleButton.getStyleClass().contains("tag-active")) {
+                toggleButton.getStyleClass().add("tag-active");
+            }
+        } else {
+            toggleButton.getStyleClass().remove("tag-active");
+        }
     }
 
     public ToggleButton prepareToggleButton(String tag, FlowPane pane) {
@@ -359,6 +438,12 @@ public class HelloController {
             addTag(DEFAULT_TAG_NAME, flowPane);
         }
     }
+
+
+
+
+
+
 
 
 

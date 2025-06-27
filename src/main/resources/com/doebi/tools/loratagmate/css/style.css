@@ -82,7 +82,16 @@
     -fx-spacing: 10;
 }
 
+.toggle-button.tag-active {
+    -fx-background-color: #4CAF50; /* green */
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+}
 
+.toggle-button {
+    -fx-background-color: #C62828; /* red */
+    -fx-text-fill: white;
+}
 
 
 
