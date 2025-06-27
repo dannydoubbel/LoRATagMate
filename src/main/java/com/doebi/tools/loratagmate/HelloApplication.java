@@ -47,7 +47,7 @@ public class HelloApplication extends Application {
         }
 
         // Final setup
-        stage.setTitle("  TagMate by Aeris");
+        stage.setTitle("");
         stage.setScene(scene);
         stage.show();
     }

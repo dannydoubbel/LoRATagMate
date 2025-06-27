@@ -3,6 +3,8 @@
 
 package com.doebi.tools.loratagmate;
 
+import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -11,6 +13,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
+import javafx.stage.Stage;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,14 +27,25 @@ import java.util.Random;
 
 public class HelloController {
 
+    private static final String DEFAULT_TAG_NAME = "RENAME ME";
+    private static final String APP_TITLE_BASE = "TagMate by Aeris";
+
+
     @FXML
     private VBox mainWindow;
 
     @FXML
-    private Label ID_label_file_name;
+    private Label ID_label_app_name;
+
+    @FXML
+    private TextField ID_label_file_name;
 
     @FXML
     private TextField ID_label_file_path;
+
+    @FXML
+    private TextField ID_label_project_name;
+
 
     @FXML
     private VBox stackPane_drop_zone;
@@ -48,14 +62,62 @@ public class HelloController {
     @FXML
     private Button ID_button_save_zip;
 
+
     @FXML
     public void initialize() {
         System.out.println("HelloController initialized — UI is loaded and ready.");
         setUpDropZones();
+        setUpSaveButtonListeners();
+        ensureAtLeastOneTagIsPresent(ID_flow_pane_high_tags);
+        ensureAtLeastOneTagIsPresent(ID_flow_pane_low_tags);
+        setupTagContainerListeners();
+        setUpProjectNameListener();
+        postInitialize();
+    }
+
+    public void postInitialize() {
+        // This runs AFTER initialize()
+        Platform.runLater(() -> {
+            Stage stage = (Stage) mainWindow.getScene().getWindow();
+            stage.setTitle("TagMate by Aeris — ready");
+            System.out.println("postInitialize <UNK> UI is loaded and ready.");
+            setAppTitleBase(APP_TITLE_BASE);
+        });
+    }
+
+    private void setAppTitleBase(String title) {
+        System.out.println("inside setAppTitleBase");
+        try {
+            ID_label_app_name.setText(APP_TITLE_BASE);
+            Stage stage = (Stage) mainWindow.getScene().getWindow();
+            stage.setTitle(title);
+        } catch (Exception e) {
+            System.out.println("setApp Title Base stage is null");
+        }
+    }
+
+    private void setUpProjectNameListener() {
+        ID_label_project_name.textProperty().addListener((obs, oldVal, newVal) -> {
+            setAppTitleBase(APP_TITLE_BASE+" -" + newVal);
+        });
+    }
+    private void setUpSaveButtonListeners() {
         ID_button_save_tag.setOnAction(event -> {
             saveTag();
         });
     }
+
+
+    private void setupTagContainerListeners() {
+        ID_flow_pane_high_tags.getChildren().addListener((ListChangeListener<Node>) change -> {
+            ensureAtLeastOneTagIsPresent(ID_flow_pane_high_tags);
+        });
+
+        ID_flow_pane_low_tags.getChildren().addListener((ListChangeListener<Node>) change -> {
+            ensureAtLeastOneTagIsPresent(ID_flow_pane_low_tags);
+        });
+    }
+
 
     private void setUpDropZones() {
         setupDropZoneForImage();
@@ -199,6 +261,7 @@ public class HelloController {
         stackPane_drop_zone.getChildren().clear();
         stackPane_drop_zone.getChildren().add(imageView);
         ID_label_file_name.setText(file.getName());
+        ID_label_project_name.setText( file.getName().substring(0, file.getName().lastIndexOf('.')));
     }
 
 
@@ -252,7 +315,7 @@ public class HelloController {
     private void addNewTagToThisZone(ToggleButton tagButton) {
         Random random = new Random();
         if (tagButton.getParent() instanceof FlowPane flowPane) {
-            addTag("RENAME ME:" + random.nextInt(), flowPane);
+            addTag(DEFAULT_TAG_NAME + random.nextInt(), flowPane);
         }
     }
 
@@ -291,7 +354,11 @@ public class HelloController {
 
     }
 
-
+    private void ensureAtLeastOneTagIsPresent(FlowPane flowPane) {
+        if (flowPane.getChildren().isEmpty()) {
+            addTag(DEFAULT_TAG_NAME, flowPane);
+        }
+    }
 
 
 

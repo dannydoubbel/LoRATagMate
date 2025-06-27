@@ -14,7 +14,7 @@
     -fx-font-size: 14;
     -fx-font-weight: normal;
     -fx-text-fill: black;
-    -fx-alignment: center;
+    -fx-alignment: center-left;
 }
 .info-label {
     -fx-font-size: 12;

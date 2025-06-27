@@ -9,18 +9,23 @@
 <?import com.doebi.tools.loratagmate.HelloController?>
 
 <VBox fx:id="mainWindow" fx:controller="com.doebi.tools.loratagmate.HelloController"   xmlns:fx="http://javafx.com/fxml" styleClass="main-layout" >
-    <Label  text="TagMate by Aeris " styleClass="fat-label"/>
+    <Label fx:id="ID_label_app_name"  text="" styleClass="fat-label"/>
     <HBox>
         <VBox>
 
             <HBox>
-                <Label text="Current file name : " styleClass="normal-label"/>
-                <Label fx:id="ID_label_file_name" text="no image loaded" styleClass="normal-label"/>
+                <Label text="Current file name : " styleClass="normal-label" minWidth="150"/>
+                <TextField fx:id="ID_label_file_name" text="no image loaded" styleClass="normal-label"  editable="false"  focusTraversable="false" />
             </HBox>
             <HBox>
-                <Label  text="Current output path : " styleClass="normal-label"/>
+                <Label  text="Current output path : " styleClass="normal-label" minWidth="150"/>
                 <TextField   fx:id="ID_label_file_path" text="no path set" styleClass="normal-label"/>
             </HBox>
+            <HBox>
+                <Label  text="Current project name : " styleClass="normal-label" minWidth="150"/>
+                <TextField   fx:id="ID_label_project_name" text="no project set" styleClass="normal-label"/>
+            </HBox>
+
             <VBox fx:id="stackPane_drop_zone"  styleClass="drop_zone">
 
             </VBox>
