@@ -1,7 +1,5 @@
 
-
-//   protected void onHelloButtonClick() {        welcomeText.setText("Welcome to JavaFX Application!");    }}
-
+// Test commit from second PC
 
 package com.doebi.tools.loratagmate;
 
