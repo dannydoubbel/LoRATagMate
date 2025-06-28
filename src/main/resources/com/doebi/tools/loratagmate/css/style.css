@@ -58,8 +58,24 @@
     -fx-min-width: 200;
     -fx-min-height: 200;
     -fx-background-color: lightgray;
-
 }
+
+.trash_zone {
+    -fx-alignment: bottom-center;
+    -fx-border-width: 1;
+    -fx-border-color: black;
+    -fx-background-insets: 1;
+    -fx-border-radius:  5;
+
+    -fx-max-width: 95;
+    -fx-max-height: 95;
+    -fx-min-width: 90;
+    -fx-min-height: 90;
+    -fx-background-color: lightgray;
+}
+
+
+
 .tags_zone {
     -fx-border-width: 1;
     -fx-border-color: black;

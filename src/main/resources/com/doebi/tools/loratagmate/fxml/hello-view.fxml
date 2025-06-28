@@ -40,6 +40,8 @@
             <Label text="         dropped at a time." styleClass="info-label"/>
             <Label text="🛈 Filenames are reused automatically for" styleClass="info-label"/>
             <Label text="         saving outputs." styleClass="info-label"/>
+            <VBox fx:id="stackPane_trash_zone"  styleClass="trash_zone">
+            </VBox>
         </VBox>
     </HBox>
 

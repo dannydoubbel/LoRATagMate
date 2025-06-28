@@ -10,27 +10,26 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.io.FileReader;
+import java.util.Objects;
 import java.util.Random;
-import java.util.stream.Collectors;
+
 
 
 public class HelloController {
 
     private static final String DEFAULT_TAG_NAME = "RENAME ME";
     private static final String APP_TITLE_BASE = "TagMate by Aeris";
+    private static final String NO_IMAGE_LOADED = "No image loaded";
+    private static final String NO_PROJECT_SET = "No project set";
 
 
     @FXML
@@ -51,6 +50,9 @@ public class HelloController {
 
     @FXML
     private VBox stackPane_drop_zone;
+
+    @FXML
+    private VBox stackPane_trash_zone;
 
     @FXML
     private FlowPane ID_flow_pane_high_tags;
@@ -84,7 +86,48 @@ public class HelloController {
             stage.setTitle("TagMate by Aeris — ready");
             System.out.println("postInitialize <UNK> UI is loaded and ready.");
             setAppTitleBase(APP_TITLE_BASE);
+            addTrashCan();
+            ID_label_file_name.setText(NO_IMAGE_LOADED);
+            ID_label_project_name.setText(NO_PROJECT_SET);
         });
+    }
+
+    private void addTrashCan() {
+        final String RESOURCE_PATH = "/com/doebi/tools/loratagmate";
+        Image trash = new Image(Objects.requireNonNull(getClass().getResourceAsStream(RESOURCE_PATH + "/images/trashcan.png")));
+        ImageView trashView = new ImageView(trash);
+
+        trashView.setFitWidth(stackPane_trash_zone.getMaxWidth()); // or any size you prefer
+        trashView.setPreserveRatio(true);
+        // 🟡 Allow drop
+        trashView.setOnDragOver(event -> {
+            if (event.getGestureSource() instanceof Node) {
+                event.acceptTransferModes(TransferMode.MOVE);
+            }
+            event.consume();
+        });
+
+        // 🔴 Handle drop
+        trashView.setOnDragDropped(event -> {
+            Object gestureSource = event.getGestureSource();
+            if (gestureSource instanceof Node node) {
+                ((Pane) node.getParent()).getChildren().remove(node);
+                System.out.println("Deleted node: " + node);
+            }
+            if (event.getGestureSource() instanceof ImageView) {
+                // Remove image
+                stackPane_drop_zone.getChildren().clear();
+                ID_label_file_name.setText(NO_IMAGE_LOADED);
+                ID_label_project_name.setText(NO_PROJECT_SET);
+            }
+
+
+
+            event.setDropCompleted(true);
+            event.consume();
+        });
+        stackPane_trash_zone.getChildren().add(trashView);
+
     }
 
     private void setAppTitleBase(String title) {
@@ -321,6 +364,22 @@ public class HelloController {
 // Bind width and height to StackPane's dimensions
         imageView.fitWidthProperty().bind(stackPane_drop_zone.widthProperty());
         imageView.fitHeightProperty().bind(stackPane_drop_zone.heightProperty());
+
+
+        imageView.setId("imageView"); // Optional: Helps in distinguishing the node type
+
+        imageView.setOnDragDetected(event -> {
+            Dragboard db = imageView.startDragAndDrop(TransferMode.MOVE);
+            ClipboardContent content = new ClipboardContent();
+            content.putString("Current Image"); // Just required, not actually used
+            db.setContent(content);
+            // 👌 Bonus: make drag visually show the tag
+            db.setDragView(imageView.snapshot(null, null));
+            event.consume();
+        });
+
+
+
         // Optionally clear previous image and add new one to the drop zone
         stackPane_drop_zone.getChildren().clear();
         stackPane_drop_zone.getChildren().add(imageView);
@@ -372,6 +431,17 @@ public class HelloController {
 
         contextMenu.getItems().addAll(deleteItem, renameItem,moveItem,addNewItem);
         tagButton.setOnContextMenuRequested(e -> contextMenu.show(tagButton, e.getScreenX(), e.getScreenY()));
+
+        tagButton.setOnDragDetected(event -> {
+            Dragboard db = tagButton.startDragAndDrop(TransferMode.MOVE);
+            ClipboardContent content = new ClipboardContent();
+            content.putString(tagButton.getText()); // Just required, not actually used
+            db.setContent(content);
+            // 👌 Bonus: make drag visually show the tag
+            db.setDragView(tagButton.snapshot(null, null));
+            event.consume();
+        });
+
 
         return tagButton;
     }
