@@ -122,7 +122,6 @@ public class HelloController {
             }
 
 
-
             event.setDropCompleted(true);
             event.consume();
         });
@@ -143,9 +142,10 @@ public class HelloController {
 
     private void setUpProjectNameListener() {
         ID_label_project_name.textProperty().addListener((_, _, newVal) -> {
-            setAppTitleBase(APP_TITLE_BASE+" -" + newVal);
+            setAppTitleBase(APP_TITLE_BASE + " -" + newVal);
         });
     }
+
     private void setUpSaveButtonListeners() {
         ID_button_save_tag.setOnAction(_ -> {
             saveTag();
@@ -160,6 +160,56 @@ public class HelloController {
 
         ID_flow_pane_low_tags.getChildren().addListener((ListChangeListener<Node>) change -> {
             ensureAtLeastOneTagIsPresent(ID_flow_pane_low_tags);
+        });
+
+        setUpTagContainerListenersEmptyClick(ID_flow_pane_high_tags);
+        setUpTagContainerListenersEmptyClick(ID_flow_pane_low_tags);
+        setUpTagContainersDropZones(ID_flow_pane_high_tags);
+        setUpTagContainersDropZones(ID_flow_pane_low_tags);
+    }
+
+    private void setUpTagContainersDropZones(FlowPane flowPane) {
+       flowPane.setOnDragOver(event ->
+
+    {
+        if (event.getGestureSource() instanceof ToggleButton) {
+            event.acceptTransferModes(TransferMode.MOVE);
+        }
+        event.consume();
+    });
+
+
+    flowPane.setOnDragDropped(event ->
+    {
+        if (event.getGestureSource() instanceof ToggleButton tagButton) {
+            FlowPane sourcePane = (FlowPane) tagButton.getParent();
+
+
+            // Avoid duplicate by tag text
+            boolean alreadyExists = flowPane.getChildren().stream()
+                    .filter(node -> node instanceof ToggleButton)
+                    .anyMatch(node -> ((ToggleButton) node).getText().equals(tagButton.getText()));
+
+                sourcePane.getChildren().remove(tagButton);
+            if (!alreadyExists) {
+                flowPane.getChildren().add(tagButton);
+            }
+
+            event.setDropCompleted(true);
+        }
+        event.consume();
+    });
+}
+
+
+
+    private void setUpTagContainerListenersEmptyClick(FlowPane flowPane) {
+        flowPane.setOnMouseClicked(event -> { // clicking is adding an new default tag
+            if (event.getTarget() == flowPane) {
+                System.out.println("Clicked on empty space in a TAG zone");
+                // Optionally: add a new placeholder tag here
+                addTag( getDefaultTagNameRandomized(), flowPane);
+            }
         });
     }
 
@@ -464,8 +514,13 @@ public class HelloController {
     private void addNewTagToThisZone(ToggleButton tagButton) {
         Random random = new Random();
         if (tagButton.getParent() instanceof FlowPane flowPane) {
-            addTag(DEFAULT_TAG_NAME + random.nextInt(), flowPane);
+            addTag( getDefaultTagNameRandomized(), flowPane);
         }
+    }
+
+    private String getDefaultTagNameRandomized(){
+        Random random = new Random();
+        return DEFAULT_TAG_NAME + random.nextInt();
     }
 
     private void moveTagToOtherZone(ToggleButton tagButton) {
@@ -486,6 +541,7 @@ public class HelloController {
         if (!alreadyExists) {
             target.getChildren().add(tagButton);
         }
+        System.out.println("Moved a togglebutton to another tag zone");
     }
 
 
@@ -505,7 +561,7 @@ public class HelloController {
 
     private void ensureAtLeastOneTagIsPresent(FlowPane flowPane) {
         if (flowPane.getChildren().isEmpty()) {
-            addTag(DEFAULT_TAG_NAME, flowPane);
+            addTag(getDefaultTagNameRandomized(), flowPane);
         }
     }
 

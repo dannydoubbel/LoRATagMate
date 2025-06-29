@@ -8,7 +8,10 @@
 
 <?import com.doebi.tools.loratagmate.HelloController?>
 
-<VBox fx:id="mainWindow" fx:controller="com.doebi.tools.loratagmate.HelloController"   xmlns:fx="http://javafx.com/fxml" styleClass="main-layout" >
+
+<?import javafx.scene.control.ScrollPane?>
+<ScrollPane fx:id="mainScroll" fitToWidth="true" vbarPolicy="ALWAYS" fx:controller="com.doebi.tools.loratagmate.HelloController"   xmlns:fx="http://javafx.com/fxml" styleClass="main-layout" >
+<VBox fx:id="mainWindow" styleClass="main-layout">
     <Label fx:id="ID_label_app_name"  text="" styleClass="fat-label"/>
     <HBox>
         <VBox>
@@ -67,6 +70,7 @@
         </Button>
     </HBox>
 </VBox>
+</ScrollPane>
 
 
 
