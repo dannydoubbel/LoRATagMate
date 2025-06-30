@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextField?>
+
+<?import javafx.scene.control.ScrollPane?>
+
+
+<ScrollPane fx:id="mainScroll" fitToWidth="true" fitToHeight="true" vbarPolicy="ALWAYS"
+            fx:controller="com.doebi.tools.loratagmate.HelloController" xmlns:fx="http://javafx.com/fxml"
+            styleClass="main-layout">
+    <VBox fx:id="mainWindow" styleClass="main-layout" VBox.vgrow="ALWAYS">
+        <Label fx:id="ID_label_app_name" styleClass="fat-label"/>
+        <HBox>
+            <VBox>
+
+                <HBox>
+                    <Label text="Current file name : " styleClass="normal-label" minWidth="150"/>
+                    <TextField fx:id="ID_label_file_name" text="no image loaded" styleClass="normal-label"
+                               editable="false" focusTraversable="false"/>
+                </HBox>
+                <HBox>
+                    <Label text="Current output path : " styleClass="normal-label" minWidth="150"/>
+                    <TextField fx:id="ID_label_file_path" text="no path set" styleClass="normal-label"/>
+                </HBox>
+                <HBox>
+                    <Label text="Current project name : " styleClass="normal-label" minWidth="150"/>
+                    <TextField fx:id="ID_label_project_name" text="no project set" styleClass="normal-label"/>
+                </HBox>
+
+                <VBox fx:id="stackPane_drop_zone" styleClass="drop_zone">
+
+                </VBox>
+            </VBox>
+            <VBox>
+                <Label text="🛈 Drop your image with an optional .txt tag file," styleClass="info-label"/>
+                <Label text="         or load a .taghigh / .taglow config." styleClass="info-label"/>
+                <Label text="🛈 You may drop them together in a single action." styleClass="info-label"/>
+                <Label text="🛈 You can also drop just an image to begin tagging" styleClass="info-label"/>
+                <Label text="         from scratch." styleClass="info-label"/>
+                <Label text="🛈 Only one image and one set of tag files can be" styleClass="info-label"/>
+                <Label text="         dropped at a time." styleClass="info-label"/>
+                <Label text="🛈 Filenames are reused automatically for" styleClass="info-label"/>
+                <Label text="         saving outputs." styleClass="info-label"/>
+                <VBox fx:id="stackPane_trash_zone" styleClass="trash_zone">
+                </VBox>
+            </VBox>
+        </HBox>
+
+
+        <VBox>
+            <Label text="High Tags" styleClass="normal-label"/>
+            <FlowPane fx:id="ID_flow_pane_high_tags" styleClass="tags_zone" VBox.vgrow="ALWAYS">
+            </FlowPane>
+        </VBox>
+        <VBox>
+            <VBox>
+                <Label text="Low Tags" styleClass="normal-label"/>
+                <FlowPane fx:id="ID_flow_pane_low_tags" styleClass="tags_zone" VBox.vgrow="ALWAYS">
+                </FlowPane>
+            </VBox>
+        </VBox>
+
+        <VBox VBox.vgrow="ALWAYS">
+            <VBox VBox.vgrow="ALWAYS">
+                <Label text="Global Tags" styleClass="normal-label"/>
+                <FlowPane fx:id="ID_flow_pane_global_tags" styleClass="tags_zone_global" VBox.vgrow="ALWAYS">
+                </FlowPane>
+            </VBox>
+        </VBox>
+
+
+        <HBox styleClass="button-box">
+            <Button fx:id="ID_button_save_tag" text="Save only tag as .txt" styleClass="button-label">
+
+            </Button>
+            <Button fx:id="ID_button_save_zip" text="Save all as .zip" styleClass="button-label">
+
+            </Button>
+        </HBox>
+    </VBox>
+</ScrollPane>
+
+
+
+
+

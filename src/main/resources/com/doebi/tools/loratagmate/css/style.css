@@ -1,3 +1,22 @@
+.tab-pane {
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+    -fx-background-color: transparent; /* Optional */
+}
+
+.tab-pane .tab-header-area {
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+}
+
+.tab-pane .tab-content-area {
+    -fx-padding: 0;
+}
+
+
+
+
+
 .main-layout {
     -fx-padding: 20;           /* adds spacing from window edges */
     -fx-spacing: 15;           /* vertical gap between VBox children */
@@ -82,8 +101,20 @@
     -fx-border-radius:  5;
     -fx-min-width: 200;
     -fx-min-height: 50;
+    -fx-pref-height: 100; /* or some max reasonable size */
     -fx-background-color: lightgray;
 }
+
+.tags_zone_global {
+    -fx-border-width: 1;
+    -fx-border-color: black;
+    -fx-border-radius:  5;
+    -fx-min-width: 200;
+    -fx-min-height: 50;
+    -fx-pref-height: 100; /* or some max reasonable size */
+    -fx-background-color: lightgray;
+}
+
 
 .tag-button {
     -fx-background-color: #3399cc;

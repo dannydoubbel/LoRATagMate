@@ -33,6 +33,9 @@ public class HelloController {
     private static final String NO_PROJECT_SET = "No project set";
     private static final String RESOURCE_PATH = "/com/doebi/tools/loratagmate";
 
+    @FXML
+    public FlowPane ID_flow_pane_global_tags;
+
 
     @FXML
     private VBox mainWindow;
