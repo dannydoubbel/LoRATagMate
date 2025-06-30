@@ -9,10 +9,10 @@
 <?import javafx.scene.control.ScrollPane?>
 
 
-<ScrollPane fx:id="mainScroll" fitToWidth="true" vbarPolicy="ALWAYS"
+<ScrollPane fx:id="mainScroll" fitToWidth="true" fitToHeight="true" vbarPolicy="ALWAYS"
             fx:controller="com.doebi.tools.loratagmate.HelloController" xmlns:fx="http://javafx.com/fxml"
             styleClass="main-layout">
-    <VBox fx:id="mainWindow" styleClass="main-layout">
+    <VBox fx:id="mainWindow" styleClass="main-layout" VBox.vgrow="ALWAYS">
         <Label fx:id="ID_label_app_name" styleClass="fat-label"/>
         <HBox>
             <VBox>
@@ -53,16 +53,26 @@
 
         <VBox>
             <Label text="High Tags" styleClass="normal-label"/>
-            <FlowPane fx:id="ID_flow_pane_high_tags" styleClass="tags_zone">
+            <FlowPane fx:id="ID_flow_pane_high_tags" styleClass="tags_zone" VBox.vgrow="ALWAYS">
             </FlowPane>
         </VBox>
         <VBox>
             <VBox>
                 <Label text="Low Tags" styleClass="normal-label"/>
-                <FlowPane fx:id="ID_flow_pane_low_tags" styleClass="tags_zone">
+                <FlowPane fx:id="ID_flow_pane_low_tags" styleClass="tags_zone" VBox.vgrow="ALWAYS">
                 </FlowPane>
             </VBox>
         </VBox>
+
+        <VBox VBox.vgrow="ALWAYS">
+            <VBox VBox.vgrow="ALWAYS">
+                <Label text="Global Tags" styleClass="normal-label"/>
+                <FlowPane fx:id="ID_flow_pane_global_tags" styleClass="tags_zone_global" VBox.vgrow="ALWAYS">
+                </FlowPane>
+            </VBox>
+        </VBox>
+
+
         <HBox styleClass="button-box">
             <Button fx:id="ID_button_save_tag" text="Save only tag as .txt" styleClass="button-label">
 

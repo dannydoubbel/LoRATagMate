@@ -101,8 +101,20 @@
     -fx-border-radius:  5;
     -fx-min-width: 200;
     -fx-min-height: 50;
+    -fx-pref-height: 100; /* or some max reasonable size */
     -fx-background-color: lightgray;
 }
+
+.tags_zone_global {
+    -fx-border-width: 1;
+    -fx-border-color: black;
+    -fx-border-radius:  5;
+    -fx-min-width: 200;
+    -fx-min-height: 50;
+    -fx-pref-height: 100; /* or some max reasonable size */
+    -fx-background-color: lightgray;
+}
+
 
 .tag-button {
     -fx-background-color: #3399cc;

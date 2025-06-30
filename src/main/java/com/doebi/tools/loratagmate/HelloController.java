@@ -31,6 +31,9 @@ public class HelloController {
     private static final String NO_IMAGE_LOADED = "No image loaded";
     private static final String NO_PROJECT_SET = "No project set";
 
+    @FXML
+    public FlowPane ID_flow_pane_global_tags;
+
 
     @FXML
     private VBox mainWindow;
