@@ -3,6 +3,7 @@
 
 package com.doebi.tools.loratagmate;
 
+import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -15,6 +16,7 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -23,13 +25,13 @@ import java.util.Objects;
 import java.util.Random;
 
 
-
 public class HelloController {
 
     private static final String DEFAULT_TAG_NAME = "RENAME ME";
     private static final String APP_TITLE_BASE = "TagMate by Aeris";
     private static final String NO_IMAGE_LOADED = "No image loaded";
     private static final String NO_PROJECT_SET = "No project set";
+    private static final String RESOURCE_PATH = "/com/doebi/tools/loratagmate";
 
 
     @FXML
@@ -71,20 +73,24 @@ public class HelloController {
     public void initialize() {
         System.out.println("HelloController initialized — UI is loaded and ready.");
         setUpDropZones();
-        setUpSaveButtonListeners();
-        ensureAtLeastOneTagIsPresent(ID_flow_pane_high_tags);
-        ensureAtLeastOneTagIsPresent(ID_flow_pane_low_tags);
+        setUpSaveButtonActions();
         setupTagContainerListeners();
         setUpProjectNameListener();
-        postInitialize();
+        ensureAtLeastOneTagIsPresent(ID_flow_pane_high_tags);
+        ensureAtLeastOneTagIsPresent(ID_flow_pane_low_tags);
+        finalizeUISetup();
     }
 
-    public void postInitialize() {
+    public void finalizeUISetup() {
         // This runs AFTER initialize()
         Platform.runLater(() -> {
-            Stage stage = (Stage) mainWindow.getScene().getWindow();
-            stage.setTitle("TagMate by Aeris — ready");
-            System.out.println("postInitialize <UNK> UI is loaded and ready.");
+            try {
+                Stage stage = (Stage) mainWindow.getScene().getWindow();
+                stage.setTitle("TagMate by Aeris — ready");
+            } catch (Exception e) {
+                System.out.println("finilizeUISetup() "+ e.getMessage());
+            }
+            System.out.println("postInitialize UI is loaded and ready.");
             setAppTitleBase(APP_TITLE_BASE);
             addTrashCan();
             ID_label_file_name.setText(NO_IMAGE_LOADED);
@@ -93,11 +99,13 @@ public class HelloController {
     }
 
     private void addTrashCan() {
-        final String RESOURCE_PATH = "/com/doebi/tools/loratagmate";
+
         Image trash = new Image(Objects.requireNonNull(getClass().getResourceAsStream(RESOURCE_PATH + "/images/trashcan.png")));
         ImageView trashView = new ImageView(trash);
 
-        trashView.setFitWidth(stackPane_trash_zone.getMaxWidth()); // or any size you prefer
+
+        trashView.fitWidthProperty().bind(stackPane_trash_zone.widthProperty());
+
         trashView.setPreserveRatio(true);
         // 🟡 Allow drop
         trashView.setOnDragOver(event -> {
@@ -136,71 +144,71 @@ public class HelloController {
             Stage stage = (Stage) mainWindow.getScene().getWindow();
             stage.setTitle(title);
         } catch (Exception e) {
-            System.out.println("setApp Title Base stage is null");
+            e.printStackTrace();
         }
     }
 
     private void setUpProjectNameListener() {
         ID_label_project_name.textProperty().addListener((_, _, newVal) -> {
-            setAppTitleBase(APP_TITLE_BASE + " -" + newVal);
+            String safeVal = (newVal == null || newVal.trim().isEmpty()) ? "" : " - " + newVal.trim();
+            setAppTitleBase(APP_TITLE_BASE + safeVal);
         });
     }
 
-    private void setUpSaveButtonListeners() {
-        ID_button_save_tag.setOnAction(_ -> {
-            saveTag();
-        });
+    private void setUpSaveButtonActions() {
+        ID_button_save_tag.setOnAction(e -> saveTag());
     }
 
 
     private void setupTagContainerListeners() {
-        ID_flow_pane_high_tags.getChildren().addListener((ListChangeListener<Node>) change -> {
-            ensureAtLeastOneTagIsPresent(ID_flow_pane_high_tags);
-        });
-
-        ID_flow_pane_low_tags.getChildren().addListener((ListChangeListener<Node>) change -> {
-            ensureAtLeastOneTagIsPresent(ID_flow_pane_low_tags);
-        });
-
-        setUpTagContainerListenersEmptyClick(ID_flow_pane_high_tags);
-        setUpTagContainerListenersEmptyClick(ID_flow_pane_low_tags);
-        setUpTagContainersDropZones(ID_flow_pane_high_tags);
-        setUpTagContainersDropZones(ID_flow_pane_low_tags);
+        setupTagZone(ID_flow_pane_low_tags);
+        setupTagZone(ID_flow_pane_high_tags);
     }
 
+    private void setupTagZone(FlowPane zone) {
+        zone.getChildren().addListener((ListChangeListener<Node>) c -> ensureAtLeastOneTagIsPresent(zone));
+        setUpTagContainerListenersEmptyClick(zone);
+        setUpTagContainersDropZones(zone);
+    }
+
+
+
     private void setUpTagContainersDropZones(FlowPane flowPane) {
-       flowPane.setOnDragOver(event ->
+        flowPane.setOnDragOver(event ->
 
-    {
-        if (event.getGestureSource() instanceof ToggleButton) {
-            event.acceptTransferModes(TransferMode.MOVE);
-        }
-        event.consume();
-    });
+        {
+            if (event.getGestureSource() instanceof ToggleButton) {
+                event.acceptTransferModes(TransferMode.MOVE);
+            }
+            event.consume();
+        });
 
+        flowPane.setOnDragDropped(event ->
+        {
+            if (event.getGestureSource() instanceof ToggleButton tagButton) {
+                FlowPane sourcePane = (FlowPane) tagButton.getParent();
 
-    flowPane.setOnDragDropped(event ->
-    {
-        if (event.getGestureSource() instanceof ToggleButton tagButton) {
-            FlowPane sourcePane = (FlowPane) tagButton.getParent();
+                if (sourcePane == flowPane) {
+                    event.setDropCompleted(true);
+                    event.consume();
+                    return;
+                }
 
-
-            // Avoid duplicate by tag text
-            boolean alreadyExists = flowPane.getChildren().stream()
-                    .filter(node -> node instanceof ToggleButton)
-                    .anyMatch(node -> ((ToggleButton) node).getText().equals(tagButton.getText()));
+                // Avoid duplicate by tag text
+                boolean alreadyExists = flowPane.getChildren().stream()
+                        .filter(node -> node instanceof ToggleButton)
+                        .anyMatch(node -> ((ToggleButton) node).getText().equals(tagButton.getText()));
 
                 sourcePane.getChildren().remove(tagButton);
-            if (!alreadyExists) {
-                flowPane.getChildren().add(tagButton);
+                if (!alreadyExists) {
+                    flowPane.getChildren().add(tagButton);
+                }
+
+                event.setDropCompleted(true);
             }
-
-            event.setDropCompleted(true);
-        }
-        event.consume();
-    });
-}
-
+            event.consume();
+        });
+    }
 
 
     private void setUpTagContainerListenersEmptyClick(FlowPane flowPane) {
@@ -208,7 +216,7 @@ public class HelloController {
             if (event.getTarget() == flowPane) {
                 System.out.println("Clicked on empty space in a TAG zone");
                 // Optionally: add a new placeholder tag here
-                addTag( getDefaultTagNameRandomized(), flowPane);
+                addTag(getDefaultTagNameRandomized(), flowPane);
             }
         });
     }
@@ -220,7 +228,7 @@ public class HelloController {
         setupDropZoneForTags(ID_flow_pane_high_tags);
     }
 
-    private void setupDropZoneForTags(FlowPane flowPane){
+    private void setupDropZoneForTags(FlowPane flowPane) {
         flowPane.setOnDragOver(event -> {
             if (event.getGestureSource() != ID_flow_pane_high_tags &&
                     event.getDragboard().hasFiles()) {
@@ -271,10 +279,9 @@ public class HelloController {
         // ⚙️ Replace this with real file handling
         for (File file : files) {
             System.out.println("Handling file: " + file.getName());
-            handleFile(file,fileAcceptanceMode);
+            handleFile(file, fileAcceptanceMode);
         }
     }
-
 
 
     private void handleFile(File file, fileacceptancemode.FileAcceptanceMode fileAcceptanceMode) {
@@ -282,10 +289,18 @@ public class HelloController {
         String fileExtension = ((dotIndex > 0) ? file.getName().substring(dotIndex + 1) : "").toLowerCase();
         System.out.println(fileExtension);
         switch (fileExtension) {
-            case "txt": handleTxtFile(file); break; // make method
-            case "taghigh": handleTagFileDrop(file,ID_flow_pane_high_tags); break;// make method
-            case "taglow": handleTagFileDrop(file,ID_flow_pane_low_tags); break;// make method
-            case "png","jpg" : if (fileAcceptanceMode == fileacceptancemode.FileAcceptanceMode.ALL_FILES)  handleImageFile(file);break;// make method
+            case "txt":
+                handleTxtFile(file);
+                break; // make method
+            case "taghigh":
+                handleTagFileDrop(file, ID_flow_pane_high_tags);
+                break;// make method
+            case "taglow":
+                handleTagFileDrop(file, ID_flow_pane_low_tags);
+                break;// make method
+            case "png", "jpg":
+                if (fileAcceptanceMode == fileacceptancemode.FileAcceptanceMode.ALL_FILES) handleImageFile(file);
+                break;// make method
             default: {
                 System.out.println("Invalid file extension: " + fileExtension);
             }
@@ -295,42 +310,43 @@ public class HelloController {
     private void handleTxtFile(File file) {
         System.out.println("Handling TXT tag file: " + file.getName());
 
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                // 1. Deactivate all existing tags
-                deactivateAllTagsInZone(ID_flow_pane_high_tags);
-                deactivateAllTagsInZone(ID_flow_pane_low_tags);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            // 1. Deactivate all existing tags
+            deactivateAllTagsInZone(ID_flow_pane_high_tags);
+            deactivateAllTagsInZone(ID_flow_pane_low_tags);
 
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (!line.trim().isEmpty()) {
-                        String[] tags = line.split(",");
-                        for (String rawTag : tags) {
-                            String tag = rawTag.trim();
-                            if (tag.isEmpty()) continue;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.trim().isEmpty()) {
+                    String[] tags = line.split(",");
+                    for (String rawTag : tags) {
+                        String tag = rawTag.trim();
+                        if (tag.isEmpty()) continue;
 
-                            boolean found = reactivateIfFound(tag, ID_flow_pane_high_tags)
-                                    || reactivateIfFound(tag, ID_flow_pane_low_tags);
+                        boolean found = reactivateIfFound(tag, ID_flow_pane_high_tags)
+                                || reactivateIfFound(tag, ID_flow_pane_low_tags);
 
-                            if (!found) {
-                                if (!tagExistsInZone(tag, ID_flow_pane_low_tags)) {
-                                    addTag(tag, ID_flow_pane_low_tags);
-                                    System.out.println("We add it " + tag);
-                                } else {
-                                    // It exists but was deactivated — reactivate it
-                                    reactivateIfFound(tag, ID_flow_pane_low_tags);
-                                }
+                        if (!found) {
+                            if (!tagExistsInZone(tag, ID_flow_pane_low_tags)) {
+                                addTag(tag, ID_flow_pane_low_tags);
+                                System.out.println("We add it " + tag);
+                            } else {
+                                // It exists but was deactivated — reactivate it
+                                reactivateIfFound(tag, ID_flow_pane_low_tags);
                             }
                         }
                     }
                 }
-
-                ensureAtLeastOneTagIsPresent(ID_flow_pane_high_tags);
-                ensureAtLeastOneTagIsPresent(ID_flow_pane_low_tags);
-
-            } catch (IOException e) {
-                System.err.println("Failed to read active tag list: " + e.getMessage());
             }
+
+            ensureAtLeastOneTagIsPresent(ID_flow_pane_high_tags);
+            ensureAtLeastOneTagIsPresent(ID_flow_pane_low_tags);
+
+        } catch (IOException e) {
+            System.err.println("Failed to read active tag list: " + e.getMessage());
+        }
     }
+
     private boolean tagExistsInZone(String tag, FlowPane pane) {
         for (Node node : pane.getChildren()) {
             if (node instanceof ToggleButton) {
@@ -368,28 +384,27 @@ public class HelloController {
     }
 
 
-    ArrayList<String> getTagFromUI(FlowPane flowPane){
-        ArrayList<String> tags = new ArrayList<>();
-        for (Node node : flowPane.getChildren()) {
-            if (node instanceof ToggleButton toggleButton) {
-                tags.add(toggleButton.getText());
-            }
-        }
-        System.out.print("Uitgelzen uit UI"); System.out.println(tags);
+    List<String> getTagTextsFromZone(FlowPane flowPane) {
+        List<String> tags = flowPane.getChildren().stream()
+                .filter(node -> node instanceof ToggleButton)
+                .map(node -> ((ToggleButton) node).getText())
+                .toList();
+
+        System.out.println("📦 Tags extracted from UI: " + tags);
         return tags;
     }
 
-    private void handleTagFileDrop(File file,FlowPane flowPane) {
+    private void handleTagFileDrop(File file, FlowPane flowPane) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
 
                 if (!line.trim().isEmpty()) {
                     String[] tags = line.split(",");
-                    ArrayList<String> existingTags = getTagFromUI(flowPane);
+                    List<String> existingTags = getTagTextsFromZone(flowPane);
                     for (String tag : tags) {
                         if (!existingTags.contains(tag)) {
-                            addTag(tag.trim(),flowPane);
+                            addTag(tag.trim(), flowPane);
                             existingTags.add(tag);
                         }
                     }
@@ -429,23 +444,33 @@ public class HelloController {
         });
 
 
-
         // Optionally clear previous image and add new one to the drop zone
         stackPane_drop_zone.getChildren().clear();
         stackPane_drop_zone.getChildren().add(imageView);
         ID_label_file_name.setText(file.getName());
-        ID_label_project_name.setText( file.getName().substring(0, file.getName().lastIndexOf('.')));
+        ID_label_project_name.setText(file.getName().substring(0, file.getName().lastIndexOf('.')));
     }
 
 
-
-      private void addTag(String tag,FlowPane flowPane) {
-        ToggleButton tagButton = prepareToggleButton(tag,flowPane);
-        //tagButton.setOnAction(e -> System.out.println("tag clicked: " + tag));
+    private void addTag(String tag, FlowPane flowPane) {
+        ToggleButton tagButton = prepareToggleButton(tag, flowPane);
         tagButton.setOnAction(e -> actionForToggleButton(tagButton));
+        playScaleTransitionOn(tagButton);
 
         flowPane.getChildren().add(tagButton);
     }
+
+    private void playScaleTransitionOn(Node node) {
+        if (node instanceof ToggleButton || node instanceof Button) {
+            ScaleTransition st = new ScaleTransition(Duration.millis(250), node);
+            st.setFromX(1.2);
+            st.setFromY(1.2);
+            st.setToX(1.0);
+            st.setToY(1.0);
+            st.play();
+        }
+    }
+
 
     private void actionForToggleButton(ToggleButton toggleButton) {
         boolean nowSelected = toggleButton.isSelected();
@@ -479,7 +504,7 @@ public class HelloController {
         MenuItem addNewItem = new MenuItem("Add New Tag");
         addNewItem.setOnAction(_ -> addNewTagToThisZone(tagButton));
 
-        contextMenu.getItems().addAll(deleteItem, renameItem,moveItem,addNewItem);
+        contextMenu.getItems().addAll(deleteItem, renameItem, moveItem, addNewItem);
         tagButton.setOnContextMenuRequested(e -> contextMenu.show(tagButton, e.getScreenX(), e.getScreenY()));
 
         tagButton.setOnDragDetected(event -> {
@@ -497,28 +522,28 @@ public class HelloController {
     }
 
     private void renameTag(String tag, ToggleButton tagButton) {
-       TextInputDialog dialog = new TextInputDialog(tag);
-       dialog.setTitle("Rename Tag");
-       dialog.setHeaderText(null);
-       dialog.setContentText("New tag name:");
-       dialog.showAndWait().ifPresent(newName -> {
-           if (tagButton.getParent() instanceof FlowPane flowPane ) {
-               flowPane.getChildren().remove(tagButton);
-               addTag(newName, flowPane);
-               tagButton.setText(newName);
-           }
-       });
+        TextInputDialog dialog = new TextInputDialog(tag);
+        dialog.setTitle("Rename Tag");
+        dialog.setHeaderText(null);
+        dialog.setContentText("New tag name:");
+        dialog.showAndWait().ifPresent(newName -> {
+            if (tagButton.getParent() instanceof FlowPane flowPane) {
+                flowPane.getChildren().remove(tagButton);
+                addTag(newName, flowPane);
+                tagButton.setText(newName);
+            }
+        });
     }
 
 
     private void addNewTagToThisZone(ToggleButton tagButton) {
         Random random = new Random();
         if (tagButton.getParent() instanceof FlowPane flowPane) {
-            addTag( getDefaultTagNameRandomized(), flowPane);
+            addTag(getDefaultTagNameRandomized(), flowPane);
         }
     }
 
-    private String getDefaultTagNameRandomized(){
+    private String getDefaultTagNameRandomized() {
         Random random = new Random();
         return DEFAULT_TAG_NAME + random.nextInt();
     }
@@ -545,11 +570,6 @@ public class HelloController {
     }
 
 
-
-
-
-
-
     // Add action methods if needed later
     // public void onSaveTagClick() { ... }
     // public void onSaveZipClick() { ... }
@@ -564,13 +584,6 @@ public class HelloController {
             addTag(getDefaultTagNameRandomized(), flowPane);
         }
     }
-
-
-
-
-
-
-
 
 
 }
