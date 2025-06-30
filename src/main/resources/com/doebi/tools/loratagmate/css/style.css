@@ -1,3 +1,22 @@
+.tab-pane {
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+    -fx-background-color: transparent; /* Optional */
+}
+
+.tab-pane .tab-header-area {
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+}
+
+.tab-pane .tab-content-area {
+    -fx-padding: 0;
+}
+
+
+
+
+
 .main-layout {
     -fx-padding: 20;           /* adds spacing from window edges */
     -fx-spacing: 15;           /* vertical gap between VBox children */
