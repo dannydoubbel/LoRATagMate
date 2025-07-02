@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class HelloController {
@@ -308,7 +309,7 @@ public class HelloController {
     private void handleDroppedFiles(List<File> files, fileacceptancemode.FileAcceptanceMode fileAcceptanceMode) {
         System.out.println("inside private void handleDroppedFiles ");
         System.out.println("Nr of files in the list : " + files.size());
-        System.out.println("counter withhout the handleFile method");
+        System.out.println("counter without the handleFile method");
         AtomicInteger counter = new AtomicInteger(0);
         files.forEach(file ->
         {
@@ -440,8 +441,7 @@ public class HelloController {
                 .toList();
 
         System.out.println("📦 Tags extracted from UI: " + tags);
-        ArrayList<String> result = new ArrayList<>(tags);
-        return result;
+        return new ArrayList<>(tags);
     }
 
     private void handleTagFileDrop(File file, TilePane flowPane) {
@@ -493,13 +493,15 @@ public class HelloController {
             db.setDragView(imageView.snapshot(null, null));
             event.consume();
         });
-
-
-        // Optionally clear previous image and add new one to the drop zone
         stackPane_drop_zone.getChildren().clear();
         stackPane_drop_zone.getChildren().add(imageView);
+        setFileRelatedLabels(file);
+    }
+
+    private void setFileRelatedLabels(File file) {
         ID_label_file_name.setText(file.getName());
         ID_label_project_name.setText(file.getName().substring(0, file.getName().lastIndexOf('.')));
+        ID_label_file_path.setText(file.getPath().substring(0, file.getPath().lastIndexOf(ID_label_file_name.getText())));
     }
 
 
@@ -648,11 +650,44 @@ public class HelloController {
 
     public void saveTag() {
         System.out.println("HelloController getID_button_save_tagClick");
-        System.out.println(getTagNamesCSV(ID_flow_pane_high_tags));
-        System.out.println(getTagNamesCSV(ID_flow_pane_low_tags));
+        //System.out.println(getTagNamesCSV(ID_flow_pane_high_tags));
+        //System.out.println(getTagNamesCSV(ID_flow_pane_low_tags));
 
+        /*
         String highCsv = getTagNamesCSV(ID_flow_pane_high_tags).trim();
         String lowCsv = getTagNamesCSV(ID_flow_pane_low_tags).trim();
+
+        String combinedCsv;
+        if (!highCsv.isEmpty() && !lowCsv.isEmpty()) {
+            combinedCsv = highCsv + ", " + lowCsv;
+        } else {
+            combinedCsv = highCsv + lowCsv; // one of them is empty
+        }
+         */
+/*
+        List<String> filteredTagNames = getTagButtons(ID_flow_pane_high_tags)
+                .map(b -> buttonToKeep(b, FilterTagCollecting.ONLY_ACTIVE))
+                .filter(Objects::nonNull)
+                .map(b -> buttonToKeep(b, FilterTagCollecting.ONLY_WITH_NAME))
+                .filter(Objects::nonNull)
+                .map(ToggleButton::getText)
+                .toList();
+*/
+        String highCsv = toCsvTTrimmed(( getTagButtons(ID_flow_pane_high_tags)
+                .map(b -> buttonToKeep(b, FilterTagCollecting.ONLY_ACTIVE))
+                .filter(Objects::nonNull)
+                .map(b -> buttonToKeep(b, FilterTagCollecting.ONLY_WITH_NAME))
+                .filter(Objects::nonNull)
+                .map(ToggleButton::getText)
+                .toList()));
+
+        String lowCsv = toCsvTTrimmed(( getTagButtons(ID_flow_pane_low_tags)
+                .map(b -> buttonToKeep(b, FilterTagCollecting.ONLY_ACTIVE))
+                .filter(Objects::nonNull)
+                .map(b -> buttonToKeep(b, FilterTagCollecting.ONLY_WITH_NAME))
+                .filter(Objects::nonNull)
+                .map(ToggleButton::getText)
+                .toList()));
 
         String combinedCsv;
         if (!highCsv.isEmpty() && !lowCsv.isEmpty()) {
@@ -668,6 +703,7 @@ public class HelloController {
         try (PrintWriter writer = new PrintWriter(file)) {
             writer.println(combinedCsv);
             System.out.println("Saved tag file to: " + file.getAbsolutePath());
+            System.out.println("Content " + combinedCsv);
         } catch (IOException e) {
             System.err.println("Failed to save tag file: " + e.getMessage());
         }
@@ -687,12 +723,35 @@ public class HelloController {
                 .collect(Collectors.toList());
     }
 
-    private String toCsv(List<String> tags) {
-        return String.join(", ", tags);
+    private Stream<ToggleButton> getTagButtons(Pane pane) {
+        return pane.getChildren().stream()
+                .filter(node -> node instanceof ToggleButton)
+                .map(node -> (ToggleButton) node); // 💡 cast to ToggleButton
+    }
+
+
+
+    private String toCsvTTrimmed(List<String> tags) {
+        return String.join(", ", tags).trim();
     }
 
     private String getTagNamesCSV(Pane pane) {
-        return toCsv(getTagNames(pane));
+        return toCsvTTrimmed(getTagNames(pane));
+    }
+
+
+    // ********************************************* implement this to do in the save method
+    public ToggleButton buttonToKeep(ToggleButton button, FilterTagCollecting filter) {
+        boolean isSelected = button.isSelected();
+        String name = button.getText().trim();
+
+        return switch (filter) {
+            case ONLY_ACTIVE -> isSelected ? button : null;
+            case ONLY_INACTIVE -> !isSelected ? button : null;
+            case ONLY_WITH_NAME -> (!name.isEmpty() && !name.toUpperCase().startsWith("RENAME ME")) ? button : null;
+            case ONLY_WITHOUT_NAME -> (name.isEmpty() || name.toUpperCase().startsWith("RENAME ME")) ? button : null;
+            case ALL -> button;
+        };
     }
 
 
