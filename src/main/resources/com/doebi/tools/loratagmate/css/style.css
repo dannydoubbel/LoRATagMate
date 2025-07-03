@@ -134,6 +134,8 @@
     -fx-spacing: 1;//10;
     -fx-max-height: 24;
     -fx-pref-height: 24;
+    -fx-mnemonic-parsing: false;
+    -fx-min-width: 140;
 }
 
 .toggle-button.tag-active {
@@ -147,6 +149,7 @@
     -fx-text-fill: white;
     -fx-max-height: 24;
     -fx-pref-height: 24;
+    -fx-mnemonic-parsing: false;
 }
 
 

@@ -6,6 +6,7 @@ package com.doebi.tools.loratagmate;
 import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -18,14 +19,18 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+
 
 
 public class HelloController {
@@ -173,6 +178,7 @@ public class HelloController {
 
     private void setUpSaveButtonActions() {
         ID_button_save_tag.setOnAction(_ -> saveTag());
+        ID_button_save_zip.setOnAction(_ -> saveZip());
     }
 
 
@@ -338,7 +344,7 @@ public class HelloController {
     private void handleFile(File file, fileacceptancemode.FileAcceptanceMode fileAcceptanceMode) {
         int dotIndex = file.getName().lastIndexOf(".");
         String fileExtension = ((dotIndex > 0) ? file.getName().substring(dotIndex + 1) : "").toLowerCase();
-        //System.out.println(fileExtension);
+
         switch (fileExtension) {
             case "txt":
                 handleTxtFile(file);
@@ -349,6 +355,8 @@ public class HelloController {
             case "taglow":
                 handleTagFileDrop(file, ID_flow_pane_low_tags);
                 break;// make method
+            case "tagglobal":
+                handleTagFileDrop(file, ID_flow_pane_global_tags);
             case "png", "jpg":
                 if (fileAcceptanceMode == fileacceptancemode.FileAcceptanceMode.ALL_FILES) handleImageFile(file);
                 break;// make method
@@ -512,7 +520,6 @@ public class HelloController {
 
         flowPane.getChildren().add(tagButton);
 
-//        System.out.println("Before TilePane pref height: " + flowPane.getPrefHeight());
         Platform.runLater(() -> {
             flowPane.setPrefHeight(Region.USE_COMPUTED_SIZE); // try explicitly
             flowPane.requestLayout();
@@ -520,13 +527,9 @@ public class HelloController {
             if (flowPane.getParent() instanceof Region parentRegion) {
                 parentRegion.setPrefHeight(Region.USE_COMPUTED_SIZE);
                 parentRegion.requestLayout();
-                // System.out.println("inside the if");
-                //System.out.println("TilePane child count: " + flowPane.getChildren().size());
-                //System.out.println("TilePane pref height: " + flowPane.prefHeight(-1));
             }
 
         });
-        //      System.out.println("After TilePane pref height: " + flowPane.getPrefHeight());
     }
 
     private void playScaleTransitionOn(Node node) {
@@ -644,35 +647,115 @@ public class HelloController {
     }
 
 
-// Add action methods if needed later
-// public void onSaveTagClick() { ... }
-// public void onSaveZipClick() { ... }
+    private void saveZip() {
+        System.out.println("HelloController getID_button_save_zipClick");
 
-    public void saveTag() {
-        System.out.println("HelloController getID_button_save_tagClick");
-        //System.out.println(getTagNamesCSV(ID_flow_pane_high_tags));
-        //System.out.println(getTagNamesCSV(ID_flow_pane_low_tags));
+        String outputPath = ID_label_file_path.getText().trim();
+        String projectName = ID_label_project_name.getText().trim();
+        String zipName =  outputPath +  projectName + ".zip";
 
-        /*
-        String highCsv = getTagNamesCSV(ID_flow_pane_high_tags).trim();
-        String lowCsv = getTagNamesCSV(ID_flow_pane_low_tags).trim();
-
-        String combinedCsv;
-        if (!highCsv.isEmpty() && !lowCsv.isEmpty()) {
-            combinedCsv = highCsv + ", " + lowCsv;
-        } else {
-            combinedCsv = highCsv + lowCsv; // one of them is empty
+        Map<String, String> tagFiles = new HashMap<>();
+        Map<String, byte[]> binaryFiles = new HashMap<>();
+        tagFiles.put(projectName + ".txt", getCombinedCSV());
+        tagFiles.put(projectName + ".taghigh", getTagsFromZoneAsCsv(ID_flow_pane_high_tags));
+        tagFiles.put(projectName + ".taglow", getTagsFromZoneAsCsv(ID_flow_pane_low_tags));
+        tagFiles.put(projectName + ".tagglobal", getTagsFromZoneAsCsv(ID_flow_pane_global_tags));
+        tagFiles.put("readme.md", "This ZIP is generated with TagMate by Aeris.");
+        // Put image if present
+        byte[] imageBytes = getImageAsPngBytes();
+        if (imageBytes != null) {
+            binaryFiles.put(projectName + ".png", imageBytes);
         }
-         */
-/*
-        List<String> filteredTagNames = getTagButtons(ID_flow_pane_high_tags)
-                .map(b -> buttonToKeep(b, FilterTagCollecting.ONLY_ACTIVE))
-                .filter(Objects::nonNull)
+        File outputZip = new File(zipName);
+        saveTagsAsZip(outputZip, tagFiles,binaryFiles);
+
+    }
+
+    private byte[] getImageAsPngBytes() {
+        Optional<Node> imageNode = stackPane_drop_zone.getChildren().stream()
+                .filter(node -> node instanceof ImageView && "imageView".equals(node.getId()))
+                .findFirst();
+
+
+        if (imageNode.isPresent()) {
+            Image fxImage = ((ImageView) imageNode.get()).getImage();
+            BufferedImage bufferedImage = SwingFXUtils.fromFXImage(fxImage, null);
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                ImageIO.write(bufferedImage, "png", baos);
+                return baos.toByteArray();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+
+
+
+
+    private String getTagsFromZoneAsCsv(Pane pane) {
+        String result = toCsvTTrimmed(( getTagButtons(pane)
                 .map(b -> buttonToKeep(b, FilterTagCollecting.ONLY_WITH_NAME))
                 .filter(Objects::nonNull)
                 .map(ToggleButton::getText)
-                .toList();
-*/
+                .toList()));
+        System.out.println(result);
+        return result;
+    }
+
+
+
+    public void saveTagsAsZip(File outputZipFile, Map<String, String> filenameToContentMap,Map<String, byte[]> binaryFiles) {
+        try (FileOutputStream fos = new FileOutputStream(outputZipFile);
+             ZipOutputStream zos = new ZipOutputStream(fos)) {
+
+            // Write tagFiles (text)
+            for (Map.Entry<String, String> entry : filenameToContentMap.entrySet()) {
+                String filename = entry.getKey();
+                String content = entry.getValue();
+
+                ZipEntry zipEntry = new ZipEntry(filename);
+                zos.putNextEntry(zipEntry);
+                zos.write(content.getBytes());
+                zos.closeEntry();
+            }
+
+            // Write binaryFiles (e.g. image)
+            for (Map.Entry<String, byte[]> entry : binaryFiles.entrySet()) {
+                zos.putNextEntry(new ZipEntry(entry.getKey()));
+                zos.write(entry.getValue());
+                zos.closeEntry();
+            }
+
+            System.out.println("✅ ZIP saved to: " + outputZipFile.getAbsolutePath());
+
+        } catch (IOException e) {
+            System.err.println("❌ Failed to save ZIP: " + e.getMessage());
+        }
+    }
+
+    private void saveTag() {
+        System.out.println("HelloController getID_button_save_tagClick");
+
+        String combinedCsv = getCombinedCSV();
+
+        String outputPath = ID_label_file_path.getText().trim();
+        String projectName = ID_label_project_name.getText().trim();
+        File file = new File(outputPath, projectName + ".txt");
+
+        try (PrintWriter writer = new PrintWriter(file)) {
+            writer.println(combinedCsv);
+            System.out.println("Saved tag file to: " + file.getAbsolutePath());
+            System.out.println("Content " + combinedCsv);
+        } catch (IOException e) {
+            System.err.println("Failed to save tag file: " + e.getMessage());
+        }
+
+    }
+
+    private String getCombinedCSV() {
+
         String highCsv = toCsvTTrimmed(( getTagButtons(ID_flow_pane_high_tags)
                 .map(b -> buttonToKeep(b, FilterTagCollecting.ONLY_ACTIVE))
                 .filter(Objects::nonNull)
@@ -695,19 +778,7 @@ public class HelloController {
         } else {
             combinedCsv = highCsv + lowCsv; // one of them is empty
         }
-
-        String outputPath = ID_label_file_path.getText().trim();
-        String projectName = ID_label_project_name.getText().trim();
-        File file = new File(outputPath, projectName + ".txt");
-
-        try (PrintWriter writer = new PrintWriter(file)) {
-            writer.println(combinedCsv);
-            System.out.println("Saved tag file to: " + file.getAbsolutePath());
-            System.out.println("Content " + combinedCsv);
-        } catch (IOException e) {
-            System.err.println("Failed to save tag file: " + e.getMessage());
-        }
-
+        return combinedCsv;
     }
 
     private void ensureAtLeastOneTagIsPresent(TilePane flowPane) {
